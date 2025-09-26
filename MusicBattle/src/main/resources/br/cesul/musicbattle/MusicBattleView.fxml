@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml "
+            prefWidth="960" prefHeight="560" fx:controller="br.cesul.musicbattle.view.MusicBattleView">
+
+    <top>
+        <VBox spacing="10">
+            <padding><Insets topRightBottomLeft="12"/></padding>
+
+            <!-- Barra superior: filtro, ranking e votar -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Filtro:"/>
+                <TextField fx:id="filterField" promptText="Título ou Artista..." prefWidth="280"/>
+
+                <Label text="Ranking:"/>
+                <ComboBox fx:id="rankingCombo" prefWidth="200"/>
+                <!-- Dica para Strategy: "Por votos" | "Por título A→Z" | "Por artista A→Z" -->
+
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Button fx:id="voteBtn" text="Votar na seleção"/>
+            </HBox>
+
+            <!-- Inclusão inline de música -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Nova música:"/>
+                <TextField fx:id="titleField"  promptText="Título"  prefWidth="260"/>
+                <TextField fx:id="artistField" promptText="Artista" prefWidth="240"/>
+                <Button fx:id="addBtn" text="Adicionar"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <TableView fx:id="table" prefHeight="420">
+            <columns>
+                <TableColumn text="Título"  fx:id="colTitle"   prefWidth="340"/>
+                <TableColumn text="Artista" fx:id="colArtist"  prefWidth="260"/>
+                <TableColumn text="Votos"   fx:id="colVotes"   prefWidth="120"/>
+            </columns>
+        </TableView>
+    </center>
+</BorderPane>
