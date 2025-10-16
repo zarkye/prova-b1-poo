@@ -17,7 +17,7 @@ public class TrackRepository {
 
     public List<Track> findAll() {
         var out = new ArrayList<Track>();
-        col.find().into(out);
+        col.find().sort(new Document("votes", -1)).into(out);
         return out;
     }
 
@@ -27,18 +27,27 @@ public class TrackRepository {
         var out = new ArrayList<Track>();
         col.find(Filters.or(
                 Filters.regex("title", ".*"+esc+".*", "i"),
-                Filters.regex("artist"," .*"+esc+".*", "i")
+                Filters.regex("artist",".*"+esc+".*", "i")
         )).into(out);
         return out;
     }
 
-    public void insert(Track t) { col.insertOne(t); }
+    public void insert(Track t) {
+        // as tracks estavam sendo inseridas sem o oid
+        // então alguns conflitos podiam acontecer, coloquei pra que ao salvar crie um oid novo
+        if(t.getId() == null){
+            t.setId(new ObjectId());
+        }
+        col.insertOne(t);
+    }
 
     public void update(Track t) {
         col.replaceOne(Filters.eq("_id", t.getId()), t, new ReplaceOptions().upsert(false));
     }
 
-    public void incrementVote(ObjectId id) {
-        col.updateOne(Filters.eq("_id", id), new Document("$inc", new Document("votes", 1)));
+    public boolean incrementVote(ObjectId id) {
+        var result = col.updateOne(Filters.eq("_id", id), new Document("$inc", new Document("votes", 1)));
+        // retornar booleano aqui pra viewmodel saber que realmente teve uma mudança
+        return result.getModifiedCount() > 0;
     }
 }
