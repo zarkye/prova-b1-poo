@@ -37,19 +37,21 @@ public class MusicBattleView {
         colVotes.setCellValueFactory(new PropertyValueFactory<>("votes"));
 
         table.setItems(vm.getSortedTracks());
-        table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
-            if(newV != null){
-                voteBtn.setOnAction(e -> {
-                    vm.votar(newV);
-                });
+
+        // estava usando um listener para pegar o objeto, mas não tinha necessidade de um listener, ajustei pra só pegar o selectionmodel, muito mais otimizado assim
+        voteBtn.setOnAction(e -> {
+            Track selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                vm.votar(selected);
+                table.getSelectionModel().clearSelection();
             }
         });
 
-        titleField.textProperty().bindBidirectional(vm.titleProperty());
-        artistField.textProperty().bindBidirectional(vm.artistProperty());
-
         //o disable do botão de votar tava zuado, não usei bind e ele não desabilitava nunca
         voteBtn.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
+
+        titleField.textProperty().bindBidirectional(vm.titleProperty());
+        artistField.textProperty().bindBidirectional(vm.artistProperty());
 
         addBtn.setOnAction(e -> {
             vm.addTrack();

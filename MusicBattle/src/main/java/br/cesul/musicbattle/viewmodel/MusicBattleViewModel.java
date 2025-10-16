@@ -29,6 +29,10 @@ public class MusicBattleViewModel {
         sortedTracks = new SortedList<>(trackFilteredList);
         //com as duas listas, uma pra sorted e uma pra filtrada, a lógica se une e a tela fica bem mais reativa, atualizou um, a outra também vai atualizar
 
+        rank.setValue("Votos");
+        // não tendo um rank settado quando inicia e o usuário clicar em votar fazia dar nullpointerexception quando o applyranking era chamado
+        // agora com ele settado para o votos por exemplo já elimina essa possibilidade de erro
+
         rank.addListener((obs, oldV, newV) -> applyRanking(newV));
     }
 
