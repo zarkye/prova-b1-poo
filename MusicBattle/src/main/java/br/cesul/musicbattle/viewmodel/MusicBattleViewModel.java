@@ -75,9 +75,11 @@ public class MusicBattleViewModel {
     public void votar(Track votedTrack) {
         if (votedTrack == null) return;
 
-        repo.incrementVote(votedTrack.getId());
-
-        votedTrack.setVotes(votedTrack.getVotes() + 1);
+        boolean success = repo.incrementVote(votedTrack.getId());
+        // verificação adicional para somente mudar na tela se algo foi alterado no banco
+        if(success){
+            votedTrack.setVotes(votedTrack.getVotes() + 1);
+        }
 
         int idx = tracks.indexOf(votedTrack);
         if (idx >= 0) {
