@@ -5,95 +5,99 @@ import br.cesul.musicbattle.repository.TrackRepository;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
+
+import java.util.Comparator;
 
 public class MusicBattleViewModel {
 
     private final StringProperty title = new SimpleStringProperty();
     private final StringProperty artist = new SimpleStringProperty();
-
-
-    public StringProperty titleProperty(){return title;}
-    public StringProperty artistProperty(){return artist;}
     private final StringProperty rank = new SimpleStringProperty();
-    public StringProperty rankProperty(){return rank;}
 
     private final TrackRepository repo = new TrackRepository();
-
     private final ObservableList<Track> tracks = FXCollections.observableArrayList();
-    public FilteredList<Track> trackFilteredList;
+    private final FilteredList<Track> trackFilteredList;
+    private final SortedList<Track> sortedTracks; // agora com uma sortedlist da pra rankear, antes não usava e por isso não conseguia dar o sort
 
-    public ObservableList<Track> getTracks(){return tracks;}
-    public FilteredList<Track> getTrackFilteredList(){return trackFilteredList;}
-
-    public MusicBattleViewModel(){
+    public MusicBattleViewModel() {
         tracks.addAll(repo.findAll());
-        tracks.addListener((ListChangeListener<? super Track>) c -> {
-            while(c.next()){
-                if(c.wasAdded()){
-                    c.getAddedSubList().forEach(repo::insert);
-                }
-            }
-        });
-        rank.addListener((obs, oldV, newV) -> {
-            if(newV == null) return;
-            switch (newV) {
-                case "Votos" -> rankVotes();
-                case "Titulo" -> rankTitulo();
-                case "Artista" -> rankArtista();
-            }
-        });
-        trackFilteredList = new FilteredList<>(tracks, p -> true);
+
+        trackFilteredList = new FilteredList<>(tracks, t -> true);
+        sortedTracks = new SortedList<>(trackFilteredList);
+        //com as duas listas, uma pra sorted e uma pra filtrada, a lógica se une e a tela fica bem mais reativa, atualizou um, a outra também vai atualizar
+
+        rank.addListener((obs, oldV, newV) -> applyRanking(newV));
     }
 
-    public void filtrarTracks(String filtro){
-        if(filtro == null || filtro.isEmpty()){
+    public StringProperty titleProperty() { return title; }
+    public StringProperty artistProperty() { return artist; }
+    public StringProperty rankProperty() { return rank; }
+
+    public SortedList<Track> getSortedTracks() { return sortedTracks; }
+
+
+    public void filtrarTracks(String filtro) {
+        if (filtro == null || filtro.isBlank()) {
             trackFilteredList.setPredicate(t -> true);
         } else {
-            String lowerFiltro = filtro.toLowerCase();
+            String lower = filtro.toLowerCase();
             trackFilteredList.setPredicate(t ->
-                    (t.getArtist() != null && t.getArtist().toLowerCase().contains(lowerFiltro)) ||
-                            (t.getTitle() != null && t.getTitle().toLowerCase().contains(lowerFiltro))
-                    );
+                    (t.getArtist() != null && t.getArtist().toLowerCase().contains(lower)) ||
+                            (t.getTitle() != null && t.getTitle().toLowerCase().contains(lower))
+            );
         }
-
+    }
+    // troquei a lógica de rank pra uma função só, usando comparator para a sortedlist
+    private void applyRanking(String newV) {
+        Comparator<Track> comparator = switch (newV) {
+            case "Votos" -> Comparator.comparingInt(Track::getVotes).reversed();
+            case "Titulo" -> Comparator.comparing(t -> t.getTitle().toLowerCase());
+            case "Artista" -> Comparator.comparing(t -> t.getArtist().toLowerCase());
+            default -> null;
+        };
+        sortedTracks.setComparator(comparator);
     }
 
-//    public void rankVotes(){
-//        trackFilteredList.sort((o1, o2) -> Integer.compare(o2.getVotes(), o1.getVotes()));
-//    }
-//
-//    public void rankTitulo(){
-//        trackFilteredList.sort((o1, o2) -> String.CASE_INSENSITIVE_ORDER.compare(o2.getTitle(), o1.getTitle()));
-//    }
-//
-//    public void rankArtista(){
-//        trackFilteredList.sort(((o1, o2) -> String.CASE_INSENSITIVE_ORDER.compare(o2.getArtist(), o1.getArtist())));
-//    }
-
-    public void addTrack(){
-        tracks.add(0, createTrack());
+    public void addTrack() {
+        Track newTrack = createTrack();
+        repo.insert(newTrack);
+        tracks.add(0, newTrack);
         resetFields();
     }
 
-    private void resetFields(){
+    public void votar(Track votedTrack) {
+        if (votedTrack == null) return;
+
+        repo.incrementVote(votedTrack.getId());
+
+        votedTrack.setVotes(votedTrack.getVotes() + 1);
+
+        int idx = tracks.indexOf(votedTrack);
+        if (idx >= 0) {
+            tracks.set(idx, votedTrack);
+        }
+
+        applyRanking(rank.get());
+    }
+
+    private void resetFields() {
         title.set("");
         artist.set("");
     }
 
-    public void votar(Track newV){
-        repo.incrementVote(newV.getId());
-        tracks.setAll(repo.findAll());
-    }
-
-    private Track createTrack(){
+    private Track createTrack() {
+        String titulo = title.get();
+        String artista = artist.get();
+        if (titulo == null || titulo.isBlank() || artista == null || artista.isBlank()) {
+            throw new IllegalArgumentException("Título e artista não podem ser vazios.");
+        }
         return new Track.Builder()
-                .titleBuilder(title.getValue())
-                .artistBuilder(artist.getValue())
+                .titleBuilder(titulo.trim())
+                .artistBuilder(artista.trim())
                 .votesBuilder(0)
                 .build();
     }
-
 }

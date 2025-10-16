@@ -27,15 +27,6 @@ public class MusicBattleView {
     private void initialize(){
         rankingCombo.setItems(FXCollections.observableArrayList("Votos", "Titulo", "Artista"));
         Bindings.bindBidirectional(rankingCombo.valueProperty(), vm.rankProperty());
-//        rankingCombo.valueProperty().addListener((obs, oldV, newV) -> {
-//            if(newV.equals("Votos")){
-//                vm.rankVotes();
-//            } else if (newV.equals("Titulo")) {
-//                vm.rankTitulo();
-//            } else if (newV.equals("Artista")) {
-//                vm.rankArtista();
-//            }
-//        });
 
         filterField.textProperty().addListener((obs, oldV, newV) -> {
             vm.filtrarTracks(newV);
@@ -45,7 +36,7 @@ public class MusicBattleView {
         colArtist.setCellValueFactory(new PropertyValueFactory<>("artist"));
         colVotes.setCellValueFactory(new PropertyValueFactory<>("votes"));
 
-        table.setItems(vm.getTrackFilteredList());
+        table.setItems(vm.getSortedTracks());
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if(newV != null){
                 voteBtn.setOnAction(e -> {
@@ -56,10 +47,14 @@ public class MusicBattleView {
 
         titleField.textProperty().bindBidirectional(vm.titleProperty());
         artistField.textProperty().bindBidirectional(vm.artistProperty());
-        voteBtn.disableProperty();
+
+        //o disable do botão de votar tava zuado, não usei bind e ele não desabilitava nunca
+        voteBtn.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
 
         addBtn.setOnAction(e -> {
             vm.addTrack();
+            titleField.clear();
+            artistField.clear();
         });
     }
 }
